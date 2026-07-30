@@ -1,12 +1,30 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import type { NextFunction, Request, Response } from "express";
 import * as jose from "jose";
+import ws from "ws";
 
 const AUTHENTICATED_AUD = "authenticated";
 
 export interface CreateSupabaseAdminOptions {
   supabaseUrl: string;
   serviceRoleKey: string;
+}
+
+/**
+ * Supabase JS always instantiates a Realtime/WebSocket client. Node 22+
+ * exposes global WebSocket; on older Node, createClient throws unless the
+ * `ws` package constructor is passed explicitly (Realtime itself is unused
+ * here — no channels/subscriptions — this only avoids the constructor error).
+ */
+function createClientOptions() {
+  const auth = { persistSession: false, autoRefreshToken: false } as const;
+  if (typeof globalThis.WebSocket !== "undefined") {
+    return { auth };
+  }
+  return {
+    auth,
+    realtime: { transport: ws as typeof globalThis.WebSocket },
+  };
 }
 
 /**
@@ -21,9 +39,7 @@ export function createSupabaseAdmin(
   if (!supabaseUrl) throw new Error("supabaseUrl is required");
   if (!serviceRoleKey) throw new Error("serviceRoleKey is required");
 
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  return createClient(supabaseUrl, serviceRoleKey, createClientOptions());
 }
 
 export async function createUserByEmail(
