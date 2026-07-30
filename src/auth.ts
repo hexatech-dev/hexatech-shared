@@ -90,6 +90,11 @@ function getJwks(supabaseUrl: string) {
  * no round-trip to Supabase's Auth API per request (unlike
  * `supabase.auth.getUser(token)`), so this is safe to call on every
  * authenticated request under load.
+ *
+ * Populates `id`/`email`/`phone`/`app_metadata`/`user_metadata` from the
+ * token's own claims (Supabase includes these directly in the JWT), so this
+ * is a drop-in replacement for code that previously read `user.email` etc.
+ * off the result of `supabase.auth.getUser(token)`.
  */
 export async function resolveUserFromAccessToken(
   supabaseUrl: string,
@@ -104,7 +109,15 @@ export async function resolveUserFromAccessToken(
   if (!sub || typeof sub !== "string") {
     throw new Error("Token payload missing subject");
   }
-  return { id: sub } as User;
+  return {
+    id: sub,
+    email: typeof payload.email === "string" ? payload.email : undefined,
+    phone: typeof payload.phone === "string" ? payload.phone : undefined,
+    app_metadata: (payload.app_metadata as Record<string, unknown>) ?? {},
+    user_metadata: (payload.user_metadata as Record<string, unknown>) ?? {},
+    aud: typeof payload.aud === "string" ? payload.aud : AUTHENTICATED_AUD,
+    created_at: "",
+  } as User;
 }
 
 export interface AuthenticatedRequest extends Request {
