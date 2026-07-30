@@ -1,7 +1,8 @@
 # @hexatech-dev/shared
 
 Shared server-side helpers for Hexatech products (credbox, jalkhata, janmat,
-sportik), published as a private npm package via GitHub Packages.
+sportik). This repo is public and consumed as a plain git dependency — no
+package registry, no token, anywhere (local installs or Vercel builds).
 
 ## Modules
 
@@ -20,25 +21,34 @@ sportik), published as a private npm package via GitHub Packages.
   Resend wrapper with safe-fail semantics (`send` never throws). Validation,
   templating, and recipient routing stay app-specific.
 
-## Versioning & publishing
+## Installing
 
-Each product pins an exact version in its own `package.json` and bumps it
-deliberately — no floating ranges against this package. To publish a new
-version:
+Each product depends on a specific tag, not a floating branch:
+
+```json
+"@hexatech-dev/shared": "github:hexatech-dev/hexatech-shared#v0.1.0"
+```
+
+`npm install` clones the tagged commit, runs this package's own `prepare`
+script (`npm run build`) to produce `dist/`, and uses that — no registry
+involved, so this works identically on a laptop and on Vercel.
+
+## Versioning
+
+Bump deliberately and tag a release when consumers need the change:
 
 ```bash
 npm version <patch|minor|major>
 git push --follow-tags
 ```
 
-The `publish` workflow (`.github/workflows/publish.yml`) builds and runs
-`npm publish` on any pushed `v*` tag, using the repo's own `GITHUB_TOKEN`
-(no manual PAT needed).
+Then update the `#v<version>` tag in each consumer's `package.json`
+dependency and reinstall — there's no auto-update; every product pins an
+exact tag.
 
 ## Local development against this package
 
-Since none of the consumer repos are a workspace/monorepo with this one, use
-`npm link` for local iteration before cutting a real version:
+For iterating without cutting a real tag yet, use `npm link`:
 
 ```bash
 npm run build   # in hexatech-shared
