@@ -20,6 +20,8 @@ export interface CreateDbOptions<TSchema extends Record<string, unknown>> {
   schema: TSchema;
   /** Forwarded to node-postgres when connecting to a non-Neon host. Default 30s — Neon-compatible poolers can take several seconds on first connect. */
   localConnectionTimeoutMillis?: number;
+  /** Forwarded to Drizzle's own query logger. */
+  logger?: boolean;
 }
 
 /**
@@ -30,18 +32,22 @@ export interface CreateDbOptions<TSchema extends Record<string, unknown>> {
 export function createDb<TSchema extends Record<string, unknown>>(
   options: CreateDbOptions<TSchema>,
 ) {
-  const { databaseUrl, schema, localConnectionTimeoutMillis = 30_000 } =
-    options;
+  const {
+    databaseUrl,
+    schema,
+    localConnectionTimeoutMillis = 30_000,
+    logger,
+  } = options;
 
   if (isNeonUrl(databaseUrl)) {
     neonConfig.webSocketConstructor = ws;
     const pool = new NeonPool({ connectionString: databaseUrl });
-    return { pool, db: drizzleNeon({ client: pool, schema }) };
+    return { pool, db: drizzleNeon({ client: pool, schema, logger }) };
   }
 
   const pool = new PgPool({
     connectionString: databaseUrl,
     connectionTimeoutMillis: localConnectionTimeoutMillis,
   });
-  return { pool, db: drizzlePg(pool, { schema }) };
+  return { pool, db: drizzlePg(pool, { schema, logger }) };
 }
