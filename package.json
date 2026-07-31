@@ -1,12 +1,12 @@
 {
   "name": "@hexatech-dev/shared",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Shared DB client, Supabase auth, and email-sending helpers for Hexatech products",
   "license": "UNLICENSED",
   "private": false,
   "type": "module",
   "engines": {
-    "node": "24.x"
+    "node": "22.x"
   },
   "exports": {
     "./db": {
@@ -64,7 +64,7 @@
     "@neondatabase/serverless": "^1.1.0",
     "@supabase/supabase-js": "^2.105.4",
     "@types/express": "^5.0.6",
-    "@types/node": "^24.0.0",
+    "@types/node": "^22.0.0",
     "@types/pg": "^8.20.0",
     "@types/ws": "^8.18.1",
     "drizzle-orm": "^0.45.2",
