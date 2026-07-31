@@ -1,6 +1,6 @@
 {
   "name": "@hexatech-dev/shared",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Shared DB client, Supabase auth, and email-sending helpers for Hexatech products",
   "license": "UNLICENSED",
   "private": false,
@@ -36,6 +36,10 @@
     "./storage-upload": {
       "types": "./dist/storage-upload.d.ts",
       "default": "./dist/storage-upload.js"
+    },
+    "./logger": {
+      "types": "./dist/logger.d.ts",
+      "default": "./dist/logger.js"
     }
   },
   "files": [

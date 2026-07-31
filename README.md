@@ -44,6 +44,14 @@ these two. `./email`/`./contact` are Node-only (`resend`).
 - **`@hexatech-dev/shared/storage-upload`** — `uploadPublicImage`, a
   direct-from-browser Supabase Storage upload (e.g. user avatars/logos),
   generalized from sportik's implementation.
+- **`@hexatech-dev/shared/logger`** — `createLogger` (console-backed,
+  `timestamp [source] message` shape, env-gated debug verbosity via
+  `DEBUG_API`) and `createRequestLogger` (Express middleware — one debug
+  line per `/api` request, one on response finish, 5xx logs at warn level).
+  Generalized from sportik's `server/lib/logger.ts` +
+  `server/middleware/requestLogger.ts`. Deliberately never logs request/
+  response bodies — credbox/jalkhata/janmat's pre-existing hand-rolled
+  middleware did, which risks leaking PII into logs.
 
 ## Installing
 
