@@ -103,7 +103,7 @@ current drift at any time with `scripts/check-consumer-pins.sh`.
 | janmat-monorepo | v0.3.1 | v0.1.1 |
 | sportik-monorepo (root) | v0.3.1 | — |
 | sportik-monorepo/server | v0.3.1 | — |
-| sportik-monorepo/web | v0.1.4 | — |
+| sportik-monorepo/web | v0.3.1 | — |
 | hexatech-website | v0.1.4 | — |
 
 When bumping a tag: land it in a test-user repo (janmat, jalkhata) first,
