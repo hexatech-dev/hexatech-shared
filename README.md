@@ -101,8 +101,8 @@ current drift at any time with `scripts/check-consumer-pins.sh`.
 | jalkhata-monorepo (root) | v0.3.1 | — |
 | jalkhata-monorepo/www | v0.1.4 | — |
 | janmat-monorepo | v0.3.1 | v0.1.1 |
-| sportik-monorepo (root) | v0.1.4 | — |
-| sportik-monorepo/server | v0.1.4 | — |
+| sportik-monorepo (root) | v0.3.1 | — |
+| sportik-monorepo/server | v0.3.1 | — |
 | sportik-monorepo/web | v0.1.4 | — |
 | hexatech-website | v0.1.4 | — |
 
