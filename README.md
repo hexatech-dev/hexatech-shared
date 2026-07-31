@@ -100,7 +100,7 @@ current drift at any time with `scripts/check-consumer-pins.sh`.
 | credbox-monorepo | v0.1.4 | — |
 | jalkhata-monorepo (root) | v0.1.4 | — |
 | jalkhata-monorepo/www | v0.1.4 | — |
-| janmat-monorepo | v0.2.0 | v0.1.0 |
+| janmat-monorepo | v0.3.0 | v0.1.0 |
 | sportik-monorepo (root) | v0.1.4 | — |
 | sportik-monorepo/server | v0.1.4 | — |
 | sportik-monorepo/web | v0.1.4 | — |
