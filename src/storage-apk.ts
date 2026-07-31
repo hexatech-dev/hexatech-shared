@@ -17,6 +17,16 @@ export interface UploadApkOptions {
   filePath: string;
   /** e.g. "credbox" | "jalkhata-staff" — file becomes `${fileNamePrefix}-${Date.now()}.apk`. */
   fileNamePrefix: string;
+  /**
+   * Optional release version info, merged into `latest.json` alongside
+   * `url`/`fileName`/`uploadedAt`/`sizeBytes` — for consumers (e.g. sportik)
+   * that show an in-app "update available" prompt by comparing the
+   * installed build's version code against this value. Omit if the product
+   * has no such check; existing consumers that don't pass these are
+   * unaffected.
+   */
+  versionName?: string;
+  versionCode?: number;
 }
 
 export interface UploadApkResult {
@@ -26,12 +36,17 @@ export interface UploadApkResult {
 
 /**
  * Uploads a built APK to Supabase Storage and overwrites `latest.json` in
- * the same bucket so `resolveLatestApkDownloadUrl` can find it.
+ * the same bucket so `resolveLatestApkDownloadUrl` can find it. Each release
+ * gets a uniquely-named file (`${fileNamePrefix}-${Date.now()}.apk`) rather
+ * than overwriting one stable filename, so a download-redirect route built
+ * on `resolveLatestApkDownloadUrl` never needs a cache-busting query param —
+ * every release is already a genuinely new URL.
  */
 export async function uploadApkRelease(
   options: UploadApkOptions,
 ): Promise<UploadApkResult> {
-  const { admin, bucket, filePath, fileNamePrefix } = options;
+  const { admin, bucket, filePath, fileNamePrefix, versionName, versionCode } =
+    options;
 
   const file = fs.readFileSync(filePath);
   const fileName = `${fileNamePrefix}-${Date.now()}.apk`;
@@ -54,6 +69,9 @@ export async function uploadApkRelease(
       url: urlData.publicUrl,
       fileName,
       uploadedAt: new Date().toISOString(),
+      sizeBytes: file.byteLength,
+      ...(versionName !== undefined ? { versionName } : {}),
+      ...(versionCode !== undefined ? { versionCode } : {}),
     }),
     { contentType: "application/json", upsert: true },
   );
@@ -65,6 +83,9 @@ export interface LatestApkMeta {
   url: string;
   fileName: string;
   uploadedAt: string;
+  sizeBytes?: number;
+  versionName?: string;
+  versionCode?: number;
 }
 
 /**
@@ -90,6 +111,13 @@ export async function resolveLatestApkDownloadUrl(
       url: meta.url,
       fileName: typeof meta.fileName === "string" ? meta.fileName : "",
       uploadedAt: typeof meta.uploadedAt === "string" ? meta.uploadedAt : "",
+      ...(typeof meta.sizeBytes === "number" ? { sizeBytes: meta.sizeBytes } : {}),
+      ...(typeof meta.versionName === "string"
+        ? { versionName: meta.versionName }
+        : {}),
+      ...(typeof meta.versionCode === "number"
+        ? { versionCode: meta.versionCode }
+        : {}),
     };
   } catch {
     return null;
