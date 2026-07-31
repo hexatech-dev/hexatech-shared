@@ -1,6 +1,6 @@
 {
   "name": "@hexatech-dev/shared",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Shared DB client, Supabase auth, and email-sending helpers for Hexatech products",
   "license": "UNLICENSED",
   "private": false,
@@ -24,6 +24,18 @@
     "./contact": {
       "types": "./dist/contact.d.ts",
       "default": "./dist/contact.js"
+    },
+    "./auth-client": {
+      "types": "./dist/auth-client.d.ts",
+      "default": "./dist/auth-client.js"
+    },
+    "./storage-apk": {
+      "types": "./dist/storage-apk.d.ts",
+      "default": "./dist/storage-apk.js"
+    },
+    "./storage-upload": {
+      "types": "./dist/storage-upload.d.ts",
+      "default": "./dist/storage-upload.js"
     }
   },
   "files": [

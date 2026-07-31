@@ -1,8 +1,14 @@
 # @hexatech-dev/shared
 
-Shared server-side helpers for Hexatech products (credbox, jalkhata, janmat,
-sportik). This repo is public and consumed as a plain git dependency — no
-package registry, no token, anywhere (local installs or Vercel builds).
+Shared helpers for Hexatech products (credbox, jalkhata, janmat, sportik,
+hexatech-website) — server-side (Node) and browser-side. This repo is public
+and consumed as a plain git dependency — no package registry, no token,
+anywhere (local installs or Vercel builds).
+
+**Runtime split**: `./db`, `./auth`, `./storage-apk` are Node-only (they
+import `ws`/`jose`/`express`/`fs`). `./auth-client`, `./storage-upload` are
+browser-safe (only `@supabase/supabase-js`) — never add a Node-only import to
+these two. `./email`/`./contact` are Node-only (`resend`).
 
 ## Modules
 
@@ -17,9 +23,27 @@ package registry, no token, anywhere (local installs or Vercel builds).
   `createUserByEmail`/`updateUserPasswordById` admin helpers. All Hexatech
   products share one Supabase project for auth, so every consumer passes the
   same `SUPABASE_URL`.
+- **`@hexatech-dev/shared/auth-client`** — `createAppSupabaseClient` (the
+  browser-side Supabase client every product previously hand-rolled),
+  `signInWithOAuth` (Google sign-in, with an optional system-browser flow for
+  native — the seam for swapping auth methods later without touching every
+  consumer), `sanitizeReturnTo`/`oauthRedirectUrl` (open-redirect-safe
+  post-login routing).
 - **`@hexatech-dev/shared/email`** — `createEmailClient({ apiKey })`, a thin
-  Resend wrapper with safe-fail semantics (`send` never throws). Validation,
-  templating, and recipient routing stay app-specific.
+  Resend wrapper with safe-fail semantics (`send` never throws), plus
+  `HEXATECH_SEND_DOMAIN`/`buildFromAddress` — every product must send from
+  the shared `hexatech.dev` domain (Resend's free tier only verifies one
+  domain). Validation, templating, and recipient routing stay app-specific.
+- **`@hexatech-dev/shared/contact`** — `sendContactMessage`, the shared
+  "contact us" form handler (honeypot spam guard + Resend send) used by every
+  marketing site's contact Server Action.
+- **`@hexatech-dev/shared/storage-apk`** — `uploadApkRelease`,
+  `resolveLatestApkDownloadUrl` — self-hosted Android APK release
+  distribution via a Supabase Storage bucket (credbox and jalkhata's
+  previously-duplicated upload script + download-redirect route pattern).
+- **`@hexatech-dev/shared/storage-upload`** — `uploadPublicImage`, a
+  direct-from-browser Supabase Storage upload (e.g. user avatars/logos),
+  generalized from sportik's implementation.
 
 ## Installing
 
@@ -55,3 +79,25 @@ npm run build   # in hexatech-shared
 npm link        # in hexatech-shared
 npm link @hexatech-dev/shared   # in the consumer repo
 ```
+
+## Consumer version matrix
+
+There's no registry and no CI, so nothing catches version drift automatically.
+This table is the source of truth for who's on what — **update it in the same
+change** whenever you bump a tag in any consumer's `package.json`. Check
+current drift at any time with `scripts/check-consumer-pins.sh`.
+
+| Consumer | `@hexatech-dev/shared` | `@hexatech-dev/ui` |
+| --- | --- | --- |
+| credbox-monorepo | v0.1.4 | — |
+| jalkhata-monorepo (root) | v0.1.4 | — |
+| jalkhata-monorepo/www | v0.1.4 | — |
+| janmat-monorepo | v0.1.4 | — |
+| sportik-monorepo (root) | v0.1.4 | — |
+| sportik-monorepo/server | v0.1.4 | — |
+| sportik-monorepo/web | v0.1.4 | — |
+| hexatech-website | v0.1.4 | — |
+
+When bumping a tag: land it in a test-user repo (janmat, jalkhata) first,
+promote to credbox/sportik only after it's been consumed successfully
+elsewhere.

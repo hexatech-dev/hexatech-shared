@@ -1,5 +1,27 @@
 import { Resend } from "resend";
 
+/**
+ * Every Hexatech product sends from this one domain rather than its own —
+ * Resend's free tier only verifies one domain, and verification is
+ * domain-wide (any local-part works), so all products share it instead of
+ * paying per additional domain. Verified directly on the `hexatech.dev`
+ * apex, not a dedicated sending subdomain (an earlier plan used one; that
+ * isn't what actually ended up getting verified in Resend).
+ */
+export const HEXATECH_SEND_DOMAIN = "hexatech.dev";
+
+/**
+ * Builds a `"Display Name <local-part@hexatech.dev>"` From header. The
+ * local-part doesn't have to match the display name (e.g. hexatech-website
+ * sends as `contact@hexatech.dev`, not `hexatechwebsite@hexatech.dev`).
+ */
+export function buildFromAddress(
+  displayName: string,
+  localPart: string,
+): string {
+  return `${displayName} <${localPart}@${HEXATECH_SEND_DOMAIN}>`;
+}
+
 /** Derived from the SDK's own overloads so this always matches whatever
  * version of `resend` the consumer has installed, instead of hand-rolling a
  * shape that can drift out of sync with it. */
