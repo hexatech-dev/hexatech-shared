@@ -104,7 +104,7 @@ current drift at any time with `scripts/check-consumer-pins.sh`.
 | sportik-monorepo (root) | v0.3.2 | v0.3.0 |
 | sportik-monorepo/server | v0.3.1 | — |
 | sportik-monorepo/web | v0.3.1 | — |
-| hexatech-website | v0.1.4 | — |
+| hexatech-website | v0.3.2 | — |
 
 When bumping a tag: land it in a test-user repo (janmat, jalkhata) first,
 promote to credbox/sportik only after it's been consumed successfully
