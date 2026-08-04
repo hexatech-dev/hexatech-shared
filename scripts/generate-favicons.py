@@ -8,7 +8,9 @@ from PIL import Image
 
 def main():
     src_path, out_dir = sys.argv[1], sys.argv[2]
-    img = Image.open(src_path).convert("RGB")
+    src = Image.open(src_path)
+    mode = "RGBA" if src.mode in ("RGBA", "LA") or "transparency" in src.info else "RGB"
+    img = src.convert(mode)
 
     sizes = {
         "favicon-16x16.png": 16,
