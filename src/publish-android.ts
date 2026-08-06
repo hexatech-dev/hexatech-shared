@@ -35,12 +35,17 @@ function readVersion(buildGradlePath: string): {
 }
 
 function buildReleaseApk(androidDir: string, apkPath: string) {
-  // Signing setup isn't verified here — it's not universal across products.
-  // Some read a keystore.properties file at build time (sportik, jalkhata),
-  // others hardcode the signingConfig directly in build.gradle (credbox).
-  // If a product genuinely has no signing configured, `gradlew assembleRelease`
-  // fails on its own with a clear enough error; guessing at the mechanism
-  // here previously produced a false positive for the hardcoded-config case.
+  // Every product reads signing config from a git-ignored keystore.properties
+  // at build time (never hardcoded/committed in build.gradle) — checked here
+  // for a clear early error instead of a confusing unsigned-APK failure deep
+  // in a multi-minute Gradle build.
+  if (!existsSync(path.join(androidDir, "keystore.properties"))) {
+    throw new Error(
+      "android/keystore.properties is missing — the release build would be unsigned. " +
+        "Generate a release keystore first (see android/app/build.gradle).",
+    );
+  }
+
   console.log("Building signed release APK (./gradlew assembleRelease)...");
   execFileSync("./gradlew", ["assembleRelease"], {
     cwd: androidDir,
@@ -55,10 +60,8 @@ function buildReleaseApk(androidDir: string, apkPath: string) {
 /**
  * Builds the signed release APK (`./gradlew assembleRelease`) and uploads it
  * via `uploadApkRelease` — the shared build+publish step behind every
- * product's `release:android` script. Signing must already be configured in
- * the product's own `android/app/build.gradle` (mechanism varies per
- * product — see `buildReleaseApk`). Requires Supabase admin credentials in
- * the environment.
+ * product's `release:android` script. Requires `android/keystore.properties`
+ * to exist and Supabase admin credentials in the environment.
  */
 export async function publishAndroidRelease(
   options: PublishAndroidOptions,
