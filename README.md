@@ -97,11 +97,11 @@ current drift at any time with `scripts/check-consumer-pins.sh`.
 
 | Consumer | `@hexatech-dev/shared` | `@hexatech-dev/ui` |
 | --- | --- | --- |
-| credbox-monorepo | v0.3.1 | v0.3.0 |
-| jalkhata-monorepo (root) | v0.3.1 | v0.3.0 |
+| credbox-monorepo | v0.3.1 | v0.4.0 |
+| jalkhata-monorepo (root) | v0.3.1 | v0.4.0 |
 | jalkhata-monorepo/www | v0.1.4 | — |
-| janmat-monorepo | v0.3.1 | v0.3.0 |
-| sportik-monorepo (root) | v0.3.2 | v0.3.0 |
+| janmat-monorepo | v0.3.1 | v0.4.0 |
+| sportik-monorepo (root) | v0.3.2 | v0.5.0 |
 | sportik-monorepo/server | v0.3.1 | — |
 | sportik-monorepo/web | v0.3.1 | — |
 | hexatech-website | v0.3.2 | — |
