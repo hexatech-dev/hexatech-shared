@@ -5,10 +5,11 @@ hexatech-website) — server-side (Node) and browser-side. This repo is public
 and consumed as a plain git dependency — no package registry, no token,
 anywhere (local installs or Vercel builds).
 
-**Runtime split**: `./db`, `./auth`, `./storage-apk` are Node-only (they
-import `ws`/`jose`/`express`/`fs`). `./auth-client`, `./storage-upload` are
-browser-safe (only `@supabase/supabase-js`) — never add a Node-only import to
-these two. `./email`/`./contact` are Node-only (`resend`).
+**Runtime split**: `./db`, `./auth`, `./storage-apk`, `./publish-android` are
+Node-only (they import `ws`/`jose`/`express`/`fs`/`child_process`).
+`./auth-client`, `./storage-upload` are browser-safe (only
+`@supabase/supabase-js`) — never add a Node-only import to these two.
+`./email`/`./contact` are Node-only (`resend`).
 
 ## Modules
 
@@ -41,6 +42,15 @@ these two. `./email`/`./contact` are Node-only (`resend`).
   `resolveLatestApkDownloadUrl` — self-hosted Android APK release
   distribution via a Supabase Storage bucket (credbox and jalkhata's
   previously-duplicated upload script + download-redirect route pattern).
+- **`@hexatech-dev/shared/publish-android`** — `publishAndroidRelease`, the
+  shared build+upload step behind every product's `release:android` script:
+  reads `versionName`/`versionCode` from `android/app/build.gradle`, runs
+  `./gradlew assembleRelease` (requires `android/keystore.properties`), then
+  calls `uploadApkRelease` above. Each consumer's own
+  `server/scripts/publish-android.ts` is a thin wrapper passing its own
+  `bucket`/`fileNamePrefix`/`productLabel`/`androidDir`/`admin` — generalized
+  from sportik's `scripts/publish-android.ts`, the most complete of the three
+  near-identical scripts this replaced.
 - **`@hexatech-dev/shared/storage-upload`** — `uploadPublicImage`, a
   direct-from-browser Supabase Storage upload (e.g. user avatars/logos),
   generalized from sportik's implementation.

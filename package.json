@@ -33,6 +33,10 @@
       "types": "./dist/storage-apk.d.ts",
       "default": "./dist/storage-apk.js"
     },
+    "./publish-android": {
+      "types": "./dist/publish-android.d.ts",
+      "default": "./dist/publish-android.js"
+    },
     "./storage-upload": {
       "types": "./dist/storage-upload.d.ts",
       "default": "./dist/storage-upload.js"
