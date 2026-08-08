@@ -1,9 +1,10 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import { createInterface } from "node:readline/promises";
 import path from "node:path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { uploadApkRelease } from "./storage-apk.js";
+import { resolveLatestApkDownloadUrl, uploadApkRelease } from "./storage-apk.js";
 
 const APK_RELATIVE_PATH = "app/build/outputs/apk/release/app-release.apk";
 
@@ -19,10 +20,12 @@ export interface PublishAndroidOptions {
   productLabel: string;
 }
 
-function readVersion(buildGradlePath: string): {
+interface Version {
   versionName: string;
   versionCode: number;
-} {
+}
+
+function readVersion(buildGradlePath: string): Version {
   const gradle = readFileSync(buildGradlePath, "utf8");
   const versionName = gradle.match(/versionName\s+"([^"]+)"/)?.[1];
   const versionCode = gradle.match(/versionCode\s+(\d+)/)?.[1];
@@ -32,6 +35,85 @@ function readVersion(buildGradlePath: string): {
     );
   }
   return { versionName, versionCode: parseInt(versionCode, 10) };
+}
+
+function writeVersion(buildGradlePath: string, version: Version) {
+  const gradle = readFileSync(buildGradlePath, "utf8");
+  const updated = gradle
+    .replace(/versionCode\s+\d+/, `versionCode ${version.versionCode}`)
+    .replace(/versionName\s+"[^"]+"/, `versionName "${version.versionName}"`);
+  writeFileSync(buildGradlePath, updated);
+}
+
+/** `"1.2"` -> `"1.3"`. Falls back to the input unchanged if it isn't `MAJOR.MINOR`. */
+function suggestNextVersionName(versionName: string): string {
+  const match = versionName.match(/^(\d+)\.(\d+)$/);
+  if (!match) return versionName;
+  const [, major, minor] = match;
+  return `${major}.${parseInt(minor, 10) + 1}`;
+}
+
+/**
+ * Shows the locally-configured version next to whatever's actually live in
+ * the bucket, then prompts for the version to publish — so a forgotten bump
+ * in `build.gradle` (previously a silent re-publish of an unchanged version,
+ * invisible to `useAppUpdateCheck` on installed devices) becomes a visible
+ * choice every time instead of a manual pre-flight step.
+ */
+async function promptForVersion(
+  local: Version,
+  published: Version | null,
+): Promise<Version> {
+  console.log(
+    `Local build.gradle:  ${local.versionName} (${local.versionCode})`,
+  );
+  console.log(
+    published
+      ? `Currently published: ${published.versionName} (${published.versionCode})`
+      : "Currently published: none yet",
+  );
+
+  const floorCode = Math.max(local.versionCode, published?.versionCode ?? 0);
+  const suggestedName = suggestNextVersionName(
+    published && published.versionCode >= local.versionCode
+      ? published.versionName
+      : local.versionName,
+  );
+  const suggestedCode = floorCode + 1;
+
+  if (!process.stdin.isTTY) {
+    throw new Error(
+      "publishAndroidRelease needs an interactive terminal to confirm the " +
+        "release version (no TTY attached). Run it directly, not from a " +
+        "non-interactive script.",
+    );
+  }
+
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const nameAnswer = (
+      await rl.question(`New version name [${suggestedName}]: `)
+    ).trim();
+    const versionName = nameAnswer || suggestedName;
+    if (!versionName) {
+      throw new Error("Version name cannot be empty.");
+    }
+
+    const codeAnswer = (
+      await rl.question(`New version code [${suggestedCode}]: `)
+    ).trim();
+    const versionCode = codeAnswer ? parseInt(codeAnswer, 10) : suggestedCode;
+    if (!Number.isInteger(versionCode) || versionCode <= floorCode) {
+      throw new Error(
+        `versionCode must be an integer greater than ${floorCode} ` +
+          `(local + published high-water mark) — got "${codeAnswer}".`,
+      );
+    }
+
+    return { versionName, versionCode };
+  } finally {
+    rl.close();
+  }
 }
 
 function buildReleaseApk(androidDir: string, apkPath: string) {
@@ -62,6 +144,12 @@ function buildReleaseApk(androidDir: string, apkPath: string) {
  * via `uploadApkRelease` — the shared build+publish step behind every
  * product's `release:android` script. Requires `android/keystore.properties`
  * to exist and Supabase admin credentials in the environment.
+ *
+ * Before building, prompts (interactively) for the version to publish,
+ * pre-filled with a suggested bump past both the local `build.gradle` and
+ * whatever's currently live in the bucket, then writes the confirmed
+ * version back to `build.gradle` — so bumping is a confirmation, not a
+ * manual edit you have to remember to make first.
  */
 export async function publishAndroidRelease(
   options: PublishAndroidOptions,
@@ -70,8 +158,17 @@ export async function publishAndroidRelease(
   const buildGradlePath = path.join(androidDir, "app/build.gradle");
   const apkPath = path.join(androidDir, APK_RELATIVE_PATH);
 
-  const { versionName, versionCode } = readVersion(buildGradlePath);
-  console.log(`Publishing ${productLabel} Android v${versionName} (${versionCode})`);
+  const local = readVersion(buildGradlePath);
+  const publishedMeta = await resolveLatestApkDownloadUrl(admin, bucket);
+  const published =
+    publishedMeta?.versionCode != null && publishedMeta.versionName != null
+      ? { versionName: publishedMeta.versionName, versionCode: publishedMeta.versionCode }
+      : null;
+
+  const { versionName, versionCode } = await promptForVersion(local, published);
+  writeVersion(buildGradlePath, { versionName, versionCode });
+
+  console.log(`\nPublishing ${productLabel} Android v${versionName} (${versionCode})`);
 
   buildReleaseApk(androidDir, apkPath);
 
