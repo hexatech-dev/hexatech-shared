@@ -130,6 +130,8 @@ export interface RequestPhoneOtpOptions {
   supabase: SupabaseClient;
   /** E.164, e.g. "+919876543210". */
   phone: string;
+  /** Caller product, e.g. "sportik", "jalkhata" — see below. */
+  product: string;
 }
 
 /**
@@ -140,12 +142,20 @@ export interface RequestPhoneOtpOptions {
  * concern). Delivery itself is out of this function's hands: it's whatever
  * the Supabase project's Phone provider is configured to use (a Send SMS
  * Hook, in every Hexatech product's case).
+ *
+ * `product`/`channel` ride along as `options.data`, which Supabase attaches
+ * to `user.user_metadata` and includes verbatim in the Send SMS Hook payload
+ * — since `hexatech-platform`'s hook is shared across every product, this is
+ * how it tells which caller (and which delivery channel) a given OTP is for.
  */
 export async function requestPhoneOtp(
   options: RequestPhoneOtpOptions,
 ): Promise<void> {
-  const { supabase, phone } = options;
-  const { error } = await supabase.auth.signInWithOtp({ phone });
+  const { supabase, phone, product } = options;
+  const { error } = await supabase.auth.signInWithOtp({
+    phone,
+    options: { data: { product, channel: "whatsapp" } },
+  });
   if (error) throw error;
 }
 
