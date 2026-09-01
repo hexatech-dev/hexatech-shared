@@ -96,9 +96,9 @@ function withReturnTo(url: string, returnTo: string | undefined): string {
  * `native.openUrl`) rather than the in-app WebView — the pattern already
  * proven in sportik, since Google blocks OAuth inside embedded WebViews.
  *
- * This is also the seam for a future auth-method change: swapping Google
- * OAuth for e.g. OTP/mobile auth later means adding a `signInWithOtp()`
- * function here once, rather than rewriting every product's call site.
+ * See `requestPhoneOtp`/`verifyPhoneOtp` below for phone-based sign-in —
+ * added as a sibling pair rather than folded into this function, since
+ * phone auth has none of OAuth's redirect/native-browser complexity.
  */
 export async function signInWithOAuth(
   options: SignInWithOAuthOptions,
@@ -124,6 +124,54 @@ export async function signInWithOAuth(
   if (useSystemBrowser && data?.url) {
     await native!.openUrl(data.url);
   }
+}
+
+export interface RequestPhoneOtpOptions {
+  supabase: SupabaseClient;
+  /** E.164, e.g. "+919876543210". */
+  phone: string;
+}
+
+/**
+ * Requests an OTP for phone-based sign-in. Unlike `signInWithOAuth`, this
+ * never redirects and has no native/web branching — it's the same two API
+ * calls (this, then `verifyPhoneOtp`) on every platform, since there's no
+ * embedded-WebView restriction to work around (that's an OAuth-only
+ * concern). Delivery itself is out of this function's hands: it's whatever
+ * the Supabase project's Phone provider is configured to use (a Send SMS
+ * Hook, in every Hexatech product's case).
+ */
+export async function requestPhoneOtp(
+  options: RequestPhoneOtpOptions,
+): Promise<void> {
+  const { supabase, phone } = options;
+  const { error } = await supabase.auth.signInWithOtp({ phone });
+  if (error) throw error;
+}
+
+export interface VerifyPhoneOtpOptions {
+  supabase: SupabaseClient;
+  phone: string;
+  /** The code the user entered. */
+  token: string;
+}
+
+/**
+ * Verifies the code from `requestPhoneOtp` and completes sign-in. On
+ * success, Supabase's SDK establishes the session internally and fires
+ * `onAuthStateChange` — same as every other sign-in method, so callers
+ * don't need to do anything with this function's return value.
+ */
+export async function verifyPhoneOtp(
+  options: VerifyPhoneOtpOptions,
+): Promise<void> {
+  const { supabase, phone, token } = options;
+  const { error } = await supabase.auth.verifyOtp({
+    phone,
+    token,
+    type: "sms",
+  });
+  if (error) throw error;
 }
 
 export interface ReturnToOptions {
