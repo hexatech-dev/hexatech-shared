@@ -184,6 +184,29 @@ export async function verifyPhoneOtp(
   if (error) throw error;
 }
 
+export interface UpdateUserProfileOptions {
+  supabase: SupabaseClient;
+  /** Merged into `user.user_metadata` — caller decides which keys to set. */
+  data: Record<string, unknown>;
+}
+
+/**
+ * Updates the signed-in user's `user_metadata` (e.g. a display name set
+ * after phone/OTP sign-in, which — unlike OAuth — supplies no name/avatar on
+ * its own). Sibling to `requestPhoneOtp`/`verifyPhoneOtp` rather than folded
+ * into either: this has nothing to do with sign-in, just profile data on an
+ * already-authenticated session. Triggers Supabase's own `onAuthStateChange`
+ * ("USER_UPDATED") on success, so callers don't need to manually refresh the
+ * cached user.
+ */
+export async function updateUserProfile(
+  options: UpdateUserProfileOptions,
+): Promise<void> {
+  const { supabase, data } = options;
+  const { error } = await supabase.auth.updateUser({ data });
+  if (error) throw error;
+}
+
 export interface ReturnToOptions {
   /** Path OAuth redirects back to after a fresh sign-in; default "/login". */
   loginPath?: string;
