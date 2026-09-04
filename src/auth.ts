@@ -79,7 +79,9 @@ function getJwks(supabaseUrl: string) {
   const iss = issuerFor(supabaseUrl);
   let jwks = jwksCache.get(iss);
   if (!jwks) {
-    jwks = jose.createRemoteJWKSet(new URL(`${iss}/.well-known/jwks.json`));
+    jwks = jose.createRemoteJWKSet(new URL(`${iss}/.well-known/jwks.json`), {
+      timeoutDuration: 10_000,
+    });
     jwksCache.set(iss, jwks);
   }
   return jwks;
@@ -101,10 +103,18 @@ export async function resolveUserFromAccessToken(
   token: string,
 ): Promise<User> {
   const iss = issuerFor(supabaseUrl);
-  const { payload } = await jose.jwtVerify(token, getJwks(supabaseUrl), {
-    issuer: iss,
-    audience: AUTHENTICATED_AUD,
-  });
+  const jwks = getJwks(supabaseUrl);
+  const verifyOptions = { issuer: iss, audience: AUTHENTICATED_AUD };
+  let payload: jose.JWTPayload;
+  try {
+    ({ payload } = await jose.jwtVerify(token, jwks, verifyOptions));
+  } catch (error) {
+    // A single slow/transient JWKS fetch used to hard-fail the request
+    // (jose's fixed 5s default, no retry) and cascade into a client-side
+    // forced logout downstream — retry once before giving up.
+    if (!(error instanceof jose.errors.JWKSTimeout)) throw error;
+    ({ payload } = await jose.jwtVerify(token, jwks, verifyOptions));
+  }
   const sub = payload.sub;
   if (!sub || typeof sub !== "string") {
     throw new Error("Token payload missing subject");
