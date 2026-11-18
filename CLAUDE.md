@@ -17,6 +17,7 @@ Sibling packages: `../hexatech-ui` (`@hexatech-dev/ui`) — themeable UI compone
 ## Critical rule: the browser-safe / Node-only module boundary
 
 - `./db`, `./auth`, `./email`, `./contact`, `./storage-apk`, `./logger` are **Node-only** — they import `ws`/`jose`/`express`/`resend`/`fs`. Never import one of these from a file that could end up in a browser bundle.
+- `./whatsapp` has no Node-only imports (just `fetch`), but it is **server-only** by design: it carries hexatech-platform's shared `MESSAGING_API_KEY`, so never use it from browser code.
 - `./auth-client`, `./storage-upload` are **browser-safe** — they only ever import `@supabase/supabase-js`. If you add a new browser-facing export, put it in a new file with this same constraint, never inside an existing Node-only file.
 
 Getting this wrong means a client-side Vite/Next.js bundle silently pulls in Node built-ins and breaks at build time (or worse, ships them).

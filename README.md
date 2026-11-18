@@ -9,7 +9,8 @@ anywhere (local installs or Vercel builds).
 Node-only (they import `ws`/`jose`/`express`/`fs`/`child_process`).
 `./auth-client`, `./storage-upload` are browser-safe (only
 `@supabase/supabase-js`) — never add a Node-only import to these two.
-`./email`/`./contact` are Node-only (`resend`).
+`./email`/`./contact` are Node-only (`resend`). `./whatsapp` has no Node-only
+imports but is **server-only** because it carries a shared API key.
 
 ## Modules
 
@@ -35,6 +36,16 @@ Node-only (they import `ws`/`jose`/`express`/`fs`/`child_process`).
   `HEXATECH_SEND_DOMAIN`/`buildFromAddress` — every product must send from
   the shared `hexatech.dev` domain (Resend's free tier only verifies one
   domain). Validation, templating, and recipient routing stay app-specific.
+- **`@hexatech-dev/shared/whatsapp`** — `createWhatsAppClient({ baseUrl,
+  apiKey, app })` → `sendTemplate({ to, templateName, languageCode?,
+  bodyParams?, components? })`. Sends a pre-approved WhatsApp template
+  through hexatech-platform's `POST /api/messaging/whatsapp/send`, using the
+  shared Hexatech WhatsApp Business account. It is safe-fail like `./email`:
+  it never throws, and resolves to `{ ok: true, messageId }` or
+  `{ ok: false, error, status, retryable }`, where `retryable` is true for a
+  platform 503 or a network failure. `apiKey` is the platform's shared
+  `MESSAGING_API_KEY`. See hexatech-platform's CLAUDE.md for the HTTP
+  contract, which non-shared consumers can call with plain `fetch`.
 - **`@hexatech-dev/shared/contact`** — `sendContactMessage`, the shared
   "contact us" form handler (honeypot spam guard + Resend send) used by every
   marketing site's contact Server Action.

@@ -44,6 +44,10 @@
     "./logger": {
       "types": "./dist/logger.d.ts",
       "default": "./dist/logger.js"
+    },
+    "./whatsapp": {
+      "types": "./dist/whatsapp.d.ts",
+      "default": "./dist/whatsapp.js"
     }
   },
   "files": [
