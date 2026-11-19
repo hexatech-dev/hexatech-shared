@@ -1,6 +1,6 @@
 {
   "name": "@hexatech-dev/shared",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "description": "Shared DB client, Supabase auth, and email-sending helpers for Hexatech products",
   "license": "UNLICENSED",
   "private": false,
