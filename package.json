@@ -48,6 +48,10 @@
     "./whatsapp": {
       "types": "./dist/whatsapp.d.ts",
       "default": "./dist/whatsapp.js"
+    },
+    "./geo": {
+      "types": "./dist/geo.d.ts",
+      "default": "./dist/geo.js"
     }
   },
   "files": [
@@ -56,7 +60,8 @@
   "scripts": {
     "build": "tsc",
     "prepare": "npm run build",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "test": "npm run build && node --test test/"
   },
   "peerDependencies": {
     "@neondatabase/serverless": "^1.1.0 || ^0.10.0",

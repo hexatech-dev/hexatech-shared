@@ -18,7 +18,7 @@ Sibling packages: `../hexatech-ui` (`@hexatech-dev/ui`) — themeable UI compone
 
 - `./db`, `./auth`, `./email`, `./contact`, `./storage-apk`, `./logger` are **Node-only** — they import `ws`/`jose`/`express`/`resend`/`fs`. Never import one of these from a file that could end up in a browser bundle.
 - `./whatsapp` has no Node-only imports (just `fetch`), but it is **server-only** by design: it carries hexatech-platform's shared `MESSAGING_API_KEY`, so never use it from browser code.
-- `./auth-client`, `./storage-upload` are **browser-safe** — they only ever import `@supabase/supabase-js`. If you add a new browser-facing export, put it in a new file with this same constraint, never inside an existing Node-only file.
+- `./auth-client`, `./storage-upload` are **browser-safe** — they only ever import `@supabase/supabase-js`. `./geo` is browser-safe with no imports at all (`fetch` + guarded `navigator`). If you add a new browser-facing export, put it in a new file with this same constraint, never inside an existing Node-only file.
 
 Getting this wrong means a client-side Vite/Next.js bundle silently pulls in Node built-ins and breaks at build time (or worse, ships them).
 
@@ -26,7 +26,7 @@ Getting this wrong means a client-side Vite/Next.js bundle silently pulls in Nod
 
 1. New file in `src/`, exported via its own subpath in `package.json`'s `exports` map (`"./name": {"types": "./dist/name.d.ts", "default": "./dist/name.js"}`) — no barrel `index.ts`, each module is a separate entry so consumers only pull in what they use.
 2. Only add a new `peerDependencies` entry if the module needs a package not already covered (`@neondatabase/serverless`, `@supabase/supabase-js`, `drizzle-orm`, `express`, `jose`, `pg`, `resend`, `ws`).
-3. `npm run check` (`tsc --noEmit`) and `npm run build` (`tsc`) before tagging.
+3. `npm run check` (`tsc --noEmit`) and `npm test` (builds, then `node --test test/` against `dist/` — plain `.mjs` tests, no test framework or tsx dependency) before tagging. Add a `test/<module>.test.mjs` for pure logic.
 4. Bump version (`npm version <patch|minor|major>`), `git push --follow-tags`.
 5. **Update the consumer version matrix in `README.md` in the same change** whenever you bump a *consumer's* pin — that table is the only thing standing in for the CI/registry checks this repo deliberately doesn't have. Run `scripts/check-consumer-pins.sh` any time to see current drift.
 

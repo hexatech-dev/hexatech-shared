@@ -10,7 +10,8 @@ Node-only (they import `ws`/`jose`/`express`/`fs`/`child_process`).
 `./auth-client`, `./storage-upload` are browser-safe (only
 `@supabase/supabase-js`) — never add a Node-only import to these two.
 `./email`/`./contact` are Node-only (`resend`). `./whatsapp` has no Node-only
-imports but is **server-only** because it carries a shared API key.
+imports but is **server-only** because it carries a shared API key. `./geo`
+is browser-safe with no dependencies at all (`fetch` + `navigator`).
 
 ## Modules
 
@@ -65,6 +66,17 @@ imports but is **server-only** because it carries a shared API key.
 - **`@hexatech-dev/shared/storage-upload`** — `uploadPublicImage`, a
   direct-from-browser Supabase Storage upload (e.g. user avatars/logos),
   generalized from sportik's implementation.
+- **`@hexatech-dev/shared/geo`** — `searchPlaces` / `reverseGeocode`
+  (OpenStreetMap Nominatim from the browser, returning
+  `PlaceResult { point, displayName, shortName }`; an `endpoint` option lets a
+  proxy replace the public instance later), `getCurrentPosition`
+  (`navigator.geolocation` with a typed `GeoError` code: `unsupported` /
+  `denied` / `unavailable` / `timeout` — works in Capacitor Android's WebView
+  once `ACCESS_*_LOCATION` is in the manifest), plus pure helpers
+  `isValidGeoPoint`, `buildPlaceShortName`, `buildMapsUrl` (Google Maps
+  search link) and `DEFAULT_MAP_CENTER_INDIA`. Framework-free: React Query
+  hooks and the map UI (Leaflet) stay in each product. Generalized from
+  sportik's tournament location picker.
 - **`@hexatech-dev/shared/logger`** — `createLogger` (console-backed,
   `timestamp [source] message` shape, env-gated debug verbosity via
   `DEBUG_API`) and `createRequestLogger` (Express middleware — one debug
